@@ -1,3 +1,4 @@
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.PriorityQueue;
 import java.util.Queue;
@@ -58,27 +59,28 @@ public class FloodFill {
 
     private void runFloodFill(short[][][] iChannels, int row, int col, ArrayList<Location> area) {
         if (Convo.inBound(iChannels[0], row, col)) {
-            Queue<Location> q = new PriorityQueue<>();
+            ArrayDeque<Location> q = new ArrayDeque<>();
             q.add(new Location(col, row));
 
             while (q.size() != 0) {
-                Location l = q.remove();
+                Location l = q.pop();
                 area.add(l);
 
                 iChannels[0][l.y][l.x] = 0;
                 iChannels[1][l.y][l.x] = 0;
                 iChannels[2][l.y][l.x] = 255;
 
-                if (checkValidity(l.x + 1, l.y, iChannels)) q.add(new Location(l.x + 1, l.y));
-                if (checkValidity(l.x - 1, l.y, iChannels)) q.add(new Location(l.x - 1, l.y));
-                if (checkValidity(l.x, l.y + 1, iChannels)) q.add(new Location(l.x, l.y + 1));
-                if (checkValidity(l.x, l.y - 1, iChannels)) q.add(new Location(l.x, l.y - 1));
+                if (checkValidity(l.x + 1, l.y, iChannels)) q.push(new Location(l.x + 1, l.y));
+                if (checkValidity(l.x - 1, l.y, iChannels)) q.push(new Location(l.x - 1, l.y));
+                if (checkValidity(l.x, l.y + 1, iChannels)) q.push(new Location(l.x, l.y + 1));
+                if (checkValidity(l.x, l.y - 1, iChannels)) q.push(new Location(l.x, l.y - 1));
             }
         }
 
     }
 
     private boolean checkValidity(int row, int col, short[][][] iChannels) {
+        if (!Convo.inBound(iChannels[0], row, col)) return false;
         short r = iChannels[0][row][col];
         short g = iChannels[1][row][col];
         short b = iChannels[2][row][col];
