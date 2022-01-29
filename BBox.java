@@ -3,7 +3,7 @@ public class BBox implements PixelFilter {
     public DImage processImage(DImage img) {
         short[][][] iChannels = {img.getRedChannel(), img.getGreenChannel(), img.getBlueChannel()};
 
-        short[] color = {235, 235, 200};
+        short[] color = {240, 240, 240};
         short colorD = 40;
 
         FloodFill flooded = new FloodFill(color, colorD);

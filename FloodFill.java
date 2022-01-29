@@ -1,7 +1,5 @@
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.PriorityQueue;
-import java.util.Queue;
 
 public class FloodFill {
     private short[] color;
@@ -14,73 +12,94 @@ public class FloodFill {
 
     public void processImage(short[][][] iChannels) {
         ArrayList<ArrayList<Location>> filledAreas = new ArrayList<>();
-        for (int r = 0; r < iChannels[0].length; r++) {
-            for (int c = 0; c < iChannels[0][0].length; c++) {
-                if (inColorBounds(iChannels[0][r][c], iChannels[1][r][c], iChannels[2][r][c])) {
+        int h = iChannels[0].length;
+        int w = iChannels[0][0].length;
+        short[][][] tempChannels = {new short[h][w], new short[h][w], new short[h][w]};
+
+        for (int r = 0; r < h; r++) {
+            for (int c = 0; c < w; c++) {
+                tempChannels[0][r][c] = iChannels[0][r][c];
+                tempChannels[1][r][c] = iChannels[1][r][c];
+                tempChannels[2][r][c] = iChannels[2][r][c];
+            }
+        }
+
+        for (int r = 0; r < h; r++) {
+            for (int c = 0; c < w; c++) {
+                if (inColorBounds(tempChannels[0][r][c], tempChannels[1][r][c], tempChannels[2][r][c])) {
                     ArrayList<Location> a = new ArrayList<>();
-                    runFloodFill(iChannels, r, c, a);
+                    runFloodFill(tempChannels, r, c, a);
                     filledAreas.add(a);
                 }
             }
         }
+
+        createBoundaries(iChannels, filledAreas, 5000);
     }
 
-    private void createBoundaries(short[][][] iChannels, ArrayList<Location> filledArea) {
-        int minX = iChannels[0][0].length, minY = iChannels[0].length, maxX = 0, maxY = 0;
+    private void createBoundaries(short[][][] iChannels, ArrayList<ArrayList<Location>> filledAreas, int areaThreshold) {
+        for (ArrayList<Location> area : filledAreas) {
+            if (area.size() < areaThreshold) continue;
+            int minX = iChannels[0].length, minY = iChannels[0][0].length, maxX = 0, maxY = 0;
+            for (Location l : area) {
+                if (l.y > maxY) maxY = l.y;
+                if (l.y < minY) minY = l.y;
 
-        for (Location l : filledArea) {
-            if (l.y > maxY) maxY = l.y;
-            if (l.y < minY) minY = l.y;
+                if (l.x > maxX) maxX = l.x;
+                if (l.x < minX) minX = l.x;
+            }
 
-            if (l.x > maxX) maxX = l.x;
-            if (l.x < minX) minX = l.x;
-        }
+            int[] boxColor = {0,255,0};
 
-        for (int i = minX; i <= maxX; i++) {
-            iChannels[0][minY][i] = 0;
-            iChannels[1][minY][i] = 0;
-            iChannels[2][minY][i] = 255;
 
-            iChannels[0][maxY][i] = 0;
-            iChannels[1][maxY][i] = 0;
-            iChannels[2][maxY][i] = 255;
-        }
+            for (int c = 0; c < boxColor.length; c++) {
+                for (int i = minX; i <= maxX; i++) {
+                    iChannels[c][i][minY] = (short) boxColor[c];
+                    iChannels[c][i][maxY] = (short) boxColor[c];
+                }
 
-        for (int i = minY; i <= maxY; i++) {
-            iChannels[0][i][minX] = 0;
-            iChannels[1][i][minX] = 0;
-            iChannels[2][i][minX] = 255;
+                for (int i = minY; i <= maxY; i++) {
+                    iChannels[c][minX][i] = (short) boxColor[c];
+                    iChannels[c][maxX][i] = (short) boxColor[c];
+                }
+            }
 
-            iChannels[0][i][maxX] = 0;
-            iChannels[1][i][maxX] = 0;
-            iChannels[2][i][maxX] = 255;
+
         }
     }
 
     private void runFloodFill(short[][][] iChannels, int row, int col, ArrayList<Location> area) {
+        boolean[][] visited = new boolean[iChannels[0].length][iChannels[0][0].length];
         if (Convo.inBound(iChannels[0], row, col)) {
             ArrayDeque<Location> q = new ArrayDeque<>();
-            q.add(new Location(col, row));
+            q.add(new Location(row, col));
 
-            while (q.size() != 0) {
+            while (q.size() > 0) {
                 Location l = q.pop();
-                area.add(l);
+                if (visited[l.x][l.y]) {
+                    if (q.size() == 0) return;
+                    else l = q.pop();
+                }
 
-                iChannels[0][l.y][l.x] = 0;
-                iChannels[1][l.y][l.x] = 0;
-                iChannels[2][l.y][l.x] = 255;
+                if (!area.contains(l)) area.add(l);
+                visited[l.x][l.y] = true;
+                int[] boxColor = {255, 0, 0};
 
-                if (checkValidity(l.x + 1, l.y, iChannels)) q.push(new Location(l.x + 1, l.y));
-                if (checkValidity(l.x - 1, l.y, iChannels)) q.push(new Location(l.x - 1, l.y));
-                if (checkValidity(l.x, l.y + 1, iChannels)) q.push(new Location(l.x, l.y + 1));
-                if (checkValidity(l.x, l.y - 1, iChannels)) q.push(new Location(l.x, l.y - 1));
+                iChannels[0][l.x][l.y] = (short) boxColor[0];
+                iChannels[1][l.x][l.y] = (short) boxColor[1];
+                iChannels[2][l.x][l.y] = (short) boxColor[2];
+
+                if (checkValidity(l.x + 1, l.y, iChannels, visited)) q.push(new Location(l.x + 1, l.y));
+                if (checkValidity(l.x - 1, l.y, iChannels, visited)) q.push(new Location(l.x - 1, l.y));
+                if (checkValidity(l.x, l.y + 1, iChannels, visited)) q.push(new Location(l.x, l.y + 1));
+                if (checkValidity(l.x, l.y - 1, iChannels, visited)) q.push(new Location(l.x, l.y - 1));
             }
         }
-
     }
 
-    private boolean checkValidity(int row, int col, short[][][] iChannels) {
+    private boolean checkValidity(int row, int col, short[][][] iChannels, boolean[][] visited) {
         if (!Convo.inBound(iChannels[0], row, col)) return false;
+        if (visited[row][col]) return false;
         short r = iChannels[0][row][col];
         short g = iChannels[1][row][col];
         short b = iChannels[2][row][col];
@@ -97,6 +116,14 @@ public class FloodFill {
     private int getCDist(short r, short g, short b) {
         int dR = r - colorD, dG = g - colorD, dB = b - colorD;
         return (int) Math.sqrt(dR * dR + dG * dG + dB + dB);
+    }
+
+    private boolean hasLoc(ArrayList<Location> area, int x, int y) {
+        for (int i = 0; i < area.size(); i++) {
+            Location l = area.get(i);
+            if (l.x == x && l.y == y) return true;
+        }
+        return false;
     }
 
 }
