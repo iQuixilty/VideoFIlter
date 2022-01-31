@@ -1,16 +1,22 @@
 public class BBox implements PixelFilter {
     @Override
     public DImage processImage(DImage img) {
+        long startTime = System.currentTimeMillis();
         short[][][] iChannels = {img.getRedChannel(), img.getGreenChannel(), img.getBlueChannel()};
 
         short[] color = {240, 240, 240};
-        short colorD = 40;
+        int[] colorD = {40, 40, 40};
 
-        FloodFill flooded = new FloodFill(color, colorD);
+        FloodFill flooded = new FloodFill(color, colorD,  6000);
         flooded.processImage(iChannels);
 
         img.setColorChannels(iChannels[0], iChannels[1], iChannels[2]);
+
+        long endTime = System.currentTimeMillis();
+        System.out.println(endTime - startTime + " ms");
+
         return img;
+
     }
 
     public static void createBBox(short[][] pixels, int width, int height) {
